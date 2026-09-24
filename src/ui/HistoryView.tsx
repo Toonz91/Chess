@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { GameRecord } from '../core/types';
 import { buildReport } from '../core/report';
 import { ReportView } from './ReportView';
+import { backupFileName, gamesToPgn } from '../core/backup';
+import { saveTextFile } from './download';
 
 export function HistoryView({ games, onDelete, onClear }: { games: GameRecord[]; onDelete: (id: string) => void; onClear: () => void }) {
   const [open, setOpen] = useState<string | null>(null);
@@ -16,9 +18,14 @@ export function HistoryView({ games, onDelete, onClear }: { games: GameRecord[];
           <div className="muted">Stored locally in this browser. Open a game to replay it and review its mistakes.</div>
         </div>
         {games.length > 0 && (
-          <button className="btn ghost" onClick={() => confirm('Delete all saved games?') && onClear()}>
-            Clear history
-          </button>
+          <div className="button-row">
+            <button className="btn" onClick={() => saveTextFile(backupFileName(new Date(), 'pgn', 'chess-tutor-games'), gamesToPgn(games), 'application/x-chess-pgn')}>
+              Export all games (PGN)
+            </button>
+            <button className="btn ghost" onClick={() => confirm('Delete all saved games?') && onClear()}>
+              Clear history
+            </button>
+          </div>
         )}
       </div>
       {games.length === 0 && <div className="card muted">No finished games yet. Play a game and it will appear here.</div>}

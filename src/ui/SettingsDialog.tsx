@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { BlunderCheckMode, Settings } from '../core/types';
 import { OPPONENT_LEVELS } from '../core/engine/AnalysisService';
 import { ANALYSIS_STRENGTHS, TIME_CONTROLS } from '../core/settings';
+import { DataManager } from './DataManager';
 
 export interface SettingsDialogProps {
   initial: Settings;
@@ -111,6 +112,8 @@ export function SettingsDialog({ initial, mode, onApply, onStart, onClose }: Set
             <input type="number" min={1} max={10} value={s.learningAttempts} onChange={(e) => up('learningAttempts', Math.max(1, Math.min(10, Number(e.target.value) || 1)))} />
           </label>
         </fieldset>
+
+        <DataManager />
 
         <div className="button-row end">
           <button className="btn ghost" onClick={onClose}>

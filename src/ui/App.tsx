@@ -8,6 +8,7 @@ import { ReportView } from './ReportView';
 import { HistoryView } from './HistoryView';
 import { CoachView } from './CoachView';
 import { SettingsDialog } from './SettingsDialog';
+import { UpdateToast } from './UpdateToast';
 
 // Singletons: engine workers must not be duplicated by React StrictMode re-mounts.
 let singleton: { services: Services; controller: GameController } | null = null;
@@ -143,6 +144,7 @@ export function App() {
             }}
           />
         )}
+        <UpdateToast />
       </div>
     </ServicesContext.Provider>
   );

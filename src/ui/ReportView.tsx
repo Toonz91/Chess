@@ -10,6 +10,8 @@ import { MoveList } from './MoveList';
 import { VariationPanel } from './VariationPanel';
 import { variationFromAnalysis, type Variation } from '../core/variation';
 import { useVariationView } from './useVariationView';
+import { gameToPgn } from '../core/backup';
+import { saveTextFile } from './download';
 
 type Filter = 'critical' | 'blunders' | 'missed' | 'all';
 
@@ -151,11 +153,19 @@ export function ReportView({ game, onBack }: { game: GameRecord; onBack?: () => 
             {game.branched ? ' · continued from a variation' : ''}
           </div>
         </div>
-        {onBack && (
-          <button className="btn ghost" onClick={onBack}>
-            ← Back
+        <div className="button-row">
+          <button
+            className="btn"
+            onClick={() => saveTextFile(`chess-tutor-${new Date(game.startedAt).toISOString().slice(0, 10)}-${game.id}.pgn`, gameToPgn(game) + '\n', 'application/x-chess-pgn')}
+          >
+            Download PGN
           </button>
-        )}
+          {onBack && (
+            <button className="btn ghost" onClick={onBack}>
+              ← Back
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="stat-grid">
