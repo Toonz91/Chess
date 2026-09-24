@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Chess Tutor icon: an original geometric pawn on a board-green tile. -->
+  <rect width="512" height="512" rx="112" fill="#779556"/>
+  <rect x="256" y="0" width="256" height="256" rx="0" fill="#ebecd0" opacity="0.18"/>
+  <rect x="0" y="256" width="256" height="256" fill="#ebecd0" opacity="0.18"/>
+  <g fill="#ffffff" stroke="#1c2027" stroke-width="14" stroke-linejoin="round">
+    <circle cx="256" cy="150" r="58"/>
+    <path d="M214 212 h84 l-10 26 h-64 z"/>
+    <path d="M226 238 h60 c6 60 26 104 58 138 h-176 c32 -34 52 -78 58 -138 z"/>
+    <rect x="140" y="376" width="232" height="48" rx="14"/>
+  </g>
+</svg>

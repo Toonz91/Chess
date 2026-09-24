@@ -11,10 +11,69 @@ npm install      # also copies the Stockfish WASM engine into public/engine
 npm run dev      # http://localhost:5173
 npm run build    # production build in dist/
 npm test         # unit + engine integration tests (Stockfish runs in Node)
+npm run preview  # serve the production build (service worker/offline mode only works in a build)
 ```
+
+The app icons in `public/icons/` are generated from `public/icons/icon.svg` with `node scripts/make-icons.mjs`.
+This needs Playwright; set `PLAYWRIGHT_MODULE` to its path if it is installed globally.
 
 The engine is the Stockfish 19 **lite, single-threaded** WASM build from the `stockfish` npm package. It needs no
 special CORS headers, so the build can be served from any static host.
+
+## Play online / install as an app
+
+The app is published at **https://toonz91.github.io/Chess/**. It is a Progressive Web App: once installed it
+opens in its own window and works fully **offline**. The app shell and the Stockfish engine (JS + WASM) are cached
+on first visit, so you can play and get tutor analysis with no connection.
+
+- **iPhone / iPad (Safari):** open the site in Safari → tap **Share** → **Add to Home Screen** → **Add**.
+  (On iOS the app must be added from Safari. Other iOS browsers may not offer the option.)
+- **Android (Chrome):** open the site → tap **⋮** → **Install app** (or **Add to Home screen**), or accept the
+  install banner.
+- **Desktop Chrome / Edge:** click the install icon at the right of the address bar (or menu → **Install Chess
+  Tutor…** / **Apps → Install this site as an app**).
+- **Desktop Safari (macOS Sonoma or later):** **File → Add to Dock…**.
+
+Updates download in the background. When a new version is ready, a small **"New version available – Reload"**
+notice appears. Reload whenever convenient; your current game is saved and resumes after the reload.
+
+## Deployment (GitHub Pages)
+
+`.github/workflows/deploy.yml` runs on every push to `main` and can also be started by hand (**Actions → Deploy to
+GitHub Pages → Run workflow**). It:
+
+1. installs Node LTS and runs `npm ci`, whose `postinstall` step copies the Stockfish engine into `public/engine`;
+2. runs `npm test` and `npm run build`;
+3. uploads `dist/` with `actions/upload-pages-artifact` and publishes it with `actions/deploy-pages`.
+
+Vite uses `base: './'`, so the HTML, service worker, web manifest and engine files all load by relative URL. The
+same build therefore works at `https://toonz91.github.io/Chess/` or any other path. The app has no client-side
+routes, so no `404.html` fallback is needed.
+
+One-time setup: in the repository go to **Settings → Pages → Build and deployment → Source** and choose
+**GitHub Actions**.
+
+## Back up and move your data
+
+Games, coaching statistics and settings are stored only in the browser on each device (`localStorage` keys
+`chess-tutor.games.v1`, `chess-tutor.current.v1`, `chess-tutor.settings.v1`). Coaching statistics are calculated
+from the saved games. To move them to another device:
+
+1. On the old device open **Settings → Your data → Export data**. This saves
+   `chess-tutor-backup-YYYY-MM-DD.json` with this structure: `{ app: "chess-tutor", version, exportedAt, data: { games,
+   currentGame, settings } }`. In the iPhone/iPad home-screen app, the share sheet opens instead; choose **Save to
+   Files**.
+2. Copy the file to the new device (AirDrop, e-mail, cloud drive…).
+3. On the new device open **Settings → Your data → Import data** and pick the file. Choose:
+   - **Merge with existing data**: adds the games, de-duplicating by game id and by start time, and keeps the
+     more complete copy. Existing settings and an existing in-progress game are kept.
+   - **Replace existing data**: the device's games, settings and in-progress game become those in the backup.
+
+The file is validated first (app name, version, structure of every game). An invalid file shows an error and
+changes nothing. If saving fails (for example storage is full), all previous data is restored.
+
+**PGN export:** *Export all games (PGN)* is available in Settings and on the History page. Each game report also
+has a *Download PGN* button. The PGN files open in any chess program.
 
 ## Features
 
@@ -89,11 +148,13 @@ src/
     report.ts             post-game report
     stats.ts              adaptive coaching profile and exercises
     history.ts            localStorage persistence
+    backup.ts             export / validate / merge / import of all stored data, PGN export
     openings.ts           opening names / book moves
   game/GameController.ts  authoritative game state (FEN), clocks, AI loop, tutor alerts, blunder check,
                           learning mode; immutable snapshots for React
   ui/                     React components (board with SVG arrows, eval bar, tutor panel, variation panel,
-                          report, history, coach, settings)
+                          report, history, coach, settings), UpdateToast (service worker),
+                          DataManager + download.ts (backup / PGN files, iOS share-sheet fallback)
 ```
 
 Each user move stores this record:

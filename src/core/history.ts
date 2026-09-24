@@ -1,10 +1,10 @@
 // Local game history (localStorage). Storage failures never break the app.
 import type { GameRecord, Settings } from './types';
 
-const GAMES_KEY = 'chess-tutor.games.v1';
-const CURRENT_KEY = 'chess-tutor.current.v1';
-const SETTINGS_KEY = 'chess-tutor.settings.v1';
-const MAX_GAMES = 100;
+export const GAMES_KEY = 'chess-tutor.games.v1';
+export const CURRENT_KEY = 'chess-tutor.current.v1';
+export const SETTINGS_KEY = 'chess-tutor.settings.v1';
+export const MAX_GAMES = 100;
 
 export interface KeyValueStore {
   getItem(k: string): string | null;
@@ -12,7 +12,7 @@ export interface KeyValueStore {
   removeItem(k: string): void;
 }
 
-function defaultStore(): KeyValueStore | null {
+export function defaultStore(): KeyValueStore | null {
   try {
     return typeof localStorage !== 'undefined' ? localStorage : null;
   } catch {
@@ -40,7 +40,13 @@ function write(store: KeyValueStore | null, key: string, value: unknown): void {
 }
 
 export class GameHistory {
+  private frozen = false;
   constructor(private store: KeyValueStore | null = defaultStore()) {}
+
+  /** Stop all writes (used while a backup is imported, before the app reloads). */
+  freeze(frozen = true): void {
+    this.frozen = frozen;
+  }
 
   list(): GameRecord[] {
     return read<GameRecord[]>(this.store, GAMES_KEY, []).sort((a, b) => b.startedAt - a.startedAt);
@@ -51,6 +57,7 @@ export class GameHistory {
   }
 
   save(game: GameRecord): void {
+    if (this.frozen) return;
     const games = read<GameRecord[]>(this.store, GAMES_KEY, []).filter((g) => g.id !== game.id);
     games.push(game);
     games.sort((a, b) => b.startedAt - a.startedAt);
@@ -58,6 +65,7 @@ export class GameHistory {
   }
 
   remove(id: string): void {
+    if (this.frozen) return;
     write(this.store, GAMES_KEY, this.list().filter((g) => g.id !== id));
   }
 
@@ -66,6 +74,7 @@ export class GameHistory {
   }
 
   saveCurrent(game: GameRecord | null): void {
+    if (this.frozen) return;
     if (!game) this.store?.removeItem(CURRENT_KEY);
     else write(this.store, CURRENT_KEY, game);
   }
@@ -79,6 +88,7 @@ export class GameHistory {
   }
 
   saveSettings(s: Settings): void {
+    if (this.frozen) return;
     write(this.store, SETTINGS_KEY, s);
   }
 }
