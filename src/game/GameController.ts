@@ -224,6 +224,12 @@ export class GameController {
         branched: !!rec.branched,
       };
       this.syncPosition();
+      // Re-queue tutor analysis for user moves that were not analysed before the reload.
+      moves.forEach((m, i) => {
+        if (m.color !== this.s.playerSide || analyses[i]) return;
+        this.s = { ...this.s, pending: [...this.s.pending, i] };
+        this.runTutor(i, { ply: i, fenBefore: m.fenBefore, playedUci: m.uci, history: moves.slice(0, i).map((x) => ({ san: x.san, from: x.from, to: x.to, piece: x.piece, color: x.color })) });
+      });
       this.afterPositionChange();
       return true;
     } catch {

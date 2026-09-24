@@ -108,6 +108,11 @@ export interface CoachingProfile {
   exercises: Exercise[];
 }
 
+/** Analysed moves including mistakes that were retried in learning mode. */
+function allMistakes(g: GameRecord): MoveAnalysis[] {
+  return [...g.analyses, ...(g.trainingMistakes ?? [])];
+}
+
 const TAG_LABEL: Partial<Record<Tag, string>> = {
   'missed-fork': 'missed forks',
   'missed-pin': 'missed pins',
@@ -122,13 +127,13 @@ const TAG_LABEL: Partial<Record<Tag, string>> = {
 };
 
 export function buildCoachingProfile(games: GameRecord[], window = 10): CoachingProfile {
-  const recent = [...games].sort((a, b) => b.startedAt - a.startedAt).filter((g) => g.analyses.length > 0).slice(0, window);
+  const recent = [...games].sort((a, b) => b.startedAt - a.startedAt).filter((g) => allMistakes(g).length > 0).slice(0, window);
   const half = Math.ceil(recent.length / 2);
   const newer = recent.slice(0, half);
   const older = recent.slice(half);
 
   const countTags = (gs: GameRecord[], tags: Tag[]) =>
-    gs.reduce((n, g) => n + g.analyses.filter((a) => isCritical(a) && a.tags.some((t) => tags.includes(t))).length, 0);
+    gs.reduce((n, g) => n + allMistakes(g).filter((a) => isCritical(a) && a.tags.some((t) => tags.includes(t))).length, 0);
 
   const themes: ThemeStat[] = THEMES.map((theme) => {
     const byTag: Partial<Record<Tag, number>> = {};
@@ -136,7 +141,7 @@ export function buildCoachingProfile(games: GameRecord[], window = 10): Coaching
     let count = 0;
     for (const g of recent) {
       let inGame = 0;
-      for (const a of g.analyses) {
+      for (const a of allMistakes(g)) {
         if (!isCritical(a)) continue;
         const hit = a.tags.filter((t) => theme.tags.includes(t));
         if (hit.length) {
@@ -185,7 +190,7 @@ export function buildCoachingProfile(games: GameRecord[], window = 10): Coaching
 export function buildExercises(games: GameRecord[], themeId?: string): Exercise[] {
   const out: Exercise[] = [];
   for (const g of games) {
-    for (const a of g.analyses) {
+    for (const a of allMistakes(g)) {
       if (!isCritical(a) || !a.bestUci || !a.bestMove) continue;
       if (a.classification === 'inaccuracy' && !a.missedOpportunity) continue;
       const theme = THEMES.find((t) => a.tags.some((tag) => t.tags.includes(tag)));

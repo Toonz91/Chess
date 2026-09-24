@@ -105,7 +105,7 @@ export function PlayView({ controller, onOpenReport, onNewGame, onOpenSettings, 
 
   const clockFor = (side: Side) => {
     let ms = s.clocks[side];
-    if (s.clockSide === side && s.clockStartedAt !== null) ms -= now - s.clockStartedAt;
+    if (s.clockSide === side && s.clockStartedAt !== null) ms -= Math.max(0, Math.max(now, Date.now()) - s.clockStartedAt);
     return ms;
   };
 

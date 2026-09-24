@@ -118,12 +118,7 @@ function ExerciseTrainer({ exercises, depth, onExit }: { exercises: Exercise[]; 
 }
 
 export function CoachView({ games, depth }: { games: GameRecord[]; depth: number }) {
-  // Mistakes corrected in learning mode still reveal patterns — include them.
-  const withTraining = useMemo(
-    () => games.map((g) => ({ ...g, analyses: [...g.analyses, ...(g.trainingMistakes ?? []).map((m) => ({ ...m, ply: m.ply + 10000 }))] })),
-    [games],
-  );
-  const profile = useMemo(() => buildCoachingProfile(withTraining), [withTraining]);
+  const profile = useMemo(() => buildCoachingProfile(games), [games]);
   const [training, setTraining] = useState<string | null>(null);
 
   if (training) {

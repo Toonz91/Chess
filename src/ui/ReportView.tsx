@@ -13,6 +13,8 @@ import { useVariationView } from './useVariationView';
 
 type Filter = 'critical' | 'blunders' | 'missed' | 'all';
 
+const STAT_LABEL = { best: 'Best', excellent: 'Excellent', good: 'Good / book', inaccuracy: 'Inaccuracies', mistake: 'Mistakes', blunder: 'Blunders' } as const;
+
 interface Ply {
   san: string;
   from: string;
@@ -38,9 +40,17 @@ function EvalGraph({ track, analyses, onSelect, selected }: { track: (Score | nu
   const W = 600;
   const H = 120;
   const n = Math.max(track.length, 1);
-  const pts = track.map((s, i) => [((i + 0.5) / n) * W, s ? H - (winChanceWhite(s) / 100) * H : H / 2] as const);
+  // Unknown evaluations carry the previous value forward (start = equal).
+  let prev = H / 2;
+  const pts = track.map((s, i) => {
+    const y = s ? H - (winChanceWhite(s) / 100) * H : prev;
+    prev = y;
+    return [((i + 0.5) / n) * W, y] as const;
+  });
   const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-  const area = pts.length ? `M0,${H} ${pts.map((p) => `L${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')} L${W},${H} Z` : '';
+  const area = pts.length
+    ? `M0,${H} L0,${(H / 2).toFixed(1)} ${pts.map((p) => `L${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')} L${W},${pts[pts.length - 1][1].toFixed(1)} L${W},${H} Z`
+    : '';
   const critical = analyses.filter((a) => ['inaccuracy', 'mistake', 'blunder', 'miss'].includes(a.classification));
   return (
     <svg className="eval-graph" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label="Evaluation over the game (White advantage up)">
@@ -69,7 +79,7 @@ export function ReportView({ game, onBack }: { game: GameRecord; onBack?: () => 
     game.analyses.forEach((a) => (m[a.ply] = a));
     return m;
   }, [game]);
-  const [ply, setPly] = useState<number | null>(report.critical[0]?.ply ?? null);
+  const [ply, setPly] = useState<number | null>(report.critical[0]?.ply ?? (game.moves.length ? game.moves.length - 1 : null));
   const [filter, setFilter] = useState<Filter>('critical');
   const [variation, setVariation] = useState<Variation | null>(null);
   const [flipped, setFlipped] = useState(false);
@@ -156,7 +166,7 @@ export function ReportView({ game, onBack }: { game: GameRecord; onBack?: () => 
         {(['best', 'excellent', 'good', 'inaccuracy', 'mistake', 'blunder'] as const).map((c) => (
           <div className="stat" key={c}>
             <div className={`stat-value cls-text-${c}`}>{report.counts[c] + (c === 'best' ? report.counts.forced : c === 'good' ? report.counts.book : 0)}</div>
-            <div className="stat-label">{c === 'best' ? 'Best' : c[0].toUpperCase() + c.slice(1) + 's'}</div>
+            <div className="stat-label">{STAT_LABEL[c]}</div>
           </div>
         ))}
         <div className="stat">
